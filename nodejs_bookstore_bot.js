@@ -5,11 +5,11 @@
 const TelegramBot = require('node-telegram-bot-api');
 
 // Замените YOUR_BOT_TOKEN на токен от @BotFather
-const token = 8231548488:AAGmNQYgHqAIlsoQ-dPDT92U05XGW5WIw9c;
+const token = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN';
 const bot = new TelegramBot(token, { polling: true });
 
 // ID администратора (получите через @userinfobot)
-const ADMIN_ID = 344707453';
+const ADMIN_ID = process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID'';
 
 // Хранилище заказов (в реальном проекте используйте базу данных)
 const orders = {};
