@@ -2,7 +2,7 @@
   "name": "bookstore-telegram-bot",
   "version": "1.0.0",
   "description": "Telegram bot for bookstore with payment processing",
-  "main": "bot.js",
+  "main": "nodejs_bookstore_bot.js",
   "scripts": {
     "start": "node bot.js",
     "dev": "node bot.js"
