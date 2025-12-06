@@ -5,12 +5,31 @@
 const TelegramBot = require('node-telegram-bot-api');
 
 // Получаем токен и ID администратора из переменных окружения
-const token = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN';
-const ADMIN_ID = process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
+const token = process.env.BOT_TOKEN;
+const ADMIN_ID = process.env.ADMIN_ID;
 
 // Проверка обязательных переменных
-if (token === 'YOUR_BOT_TOKEN' || ADMIN_ID === 'YOUR_ADMIN_TELEGRAM_ID') {
-  console.error('❌ Ошибка: Установите переменные окружения BOT_TOKEN и ADMIN_ID');
+const missingVars = [];
+if (!token || (typeof token === 'string' && token.trim() === '')) {
+  missingVars.push('BOT_TOKEN');
+}
+if (!ADMIN_ID || (typeof ADMIN_ID === 'string' && ADMIN_ID.trim() === '')) {
+  missingVars.push('ADMIN_ID');
+}
+
+if (missingVars.length > 0) {
+  console.error('❌ Ошибка: Отсутствуют обязательные переменные окружения:');
+  missingVars.forEach(varName => {
+    console.error(`   - ${varName}`);
+  });
+  console.error('\n📝 Инструкция по настройке:');
+  console.error('   1. Для локальной разработки создайте файл .env или экспортируйте переменные:');
+  console.error('      export BOT_TOKEN="your_bot_token"');
+  console.error('      export ADMIN_ID="your_admin_id"');
+  console.error('   2. Для Railway добавьте переменные в настройках проекта (Variables)');
+  console.error('   3. Получите BOT_TOKEN от @BotFather в Telegram');
+  console.error('   4. Получите ADMIN_ID от @userinfobot в Telegram');
+  console.error('\n📚 Подробнее: см. README.md');
   process.exit(1);
 }
 
