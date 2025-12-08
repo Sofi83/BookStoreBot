@@ -49,6 +49,20 @@ const bot = new TelegramBot(token, { polling: true });
 const orders = {};
 
 // ============================================
+// ФУНКЦИЯ ПОЛУЧЕНИЯ ПРЯМОЙ ССЫЛКИ НА СКАЧИВАНИЕ
+// ============================================
+function getDirectDownloadLink(driveUrl) {
+  // Извлекаем ID файла из ссылки Google Drive
+  const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileIdMatch && fileIdMatch[1]) {
+    const fileId = fileIdMatch[1];
+    // Для изображений используем формат просмотра, для файлов - скачивание
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  }
+  return driveUrl; // Возвращаем оригинальную ссылку, если не удалось преобразовать
+}
+
+// ============================================
 // КАТАЛОГ КНИГ
 // ============================================
 const books = [
@@ -120,10 +134,14 @@ bot.onText(/\/start/, (msg) => {
     ]
   };
 
-  // Отправляем фото с текстом
+  // Отправляем фото с текстом (с обработкой ошибок)
   bot.sendPhoto(chatId, welcomeImageLink, {
     caption: welcomeText,
     reply_markup: keyboard
+  }).catch((error) => {
+    console.error('Ошибка при отправке фото:', error);
+    // Если не удалось отправить фото, отправляем только текст
+    bot.sendMessage(chatId, welcomeText, { reply_markup: keyboard });
   });
 });
 
