@@ -4,8 +4,8 @@
   "description": "Telegram bot for bookstore with payment processing",
   "main": "nodejs_bookstore_bot.js",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "node bot.js"
+    "start": "node nodejs_bookstore_bot.js",
+    "dev": "node nodejs_bookstore_bot.js"
   },
   "keywords": [
     "telegram",
