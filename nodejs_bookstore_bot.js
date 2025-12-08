@@ -38,9 +38,14 @@ const books = [
     author: 'Автор',
     price: 500,
     available: true,
+    imageUrl: 'https://drive.google.com/file/d/1qb56gm96i3s52XAtUwoCaicNBotx0OJu/view?usp=sharing',
+    description: `История, которая перевернёт ваше представление о реальности
+Представьте: женщина в современном мире вдруг начинает видеть то, что не укладывается в логику.
+ Воспоминания — слишком ясные, слишком живые. И постепенно она понимает: это не фантазии. Это память другой жизни. Она — Диана. Но когда-то она была Дидоной — царицей Карфагена.`,
     driveLinks: {
       pdf: 'https://drive.google.com/file/d/1C2aCMZifPJMErlbTZ5BTqJomjj-w30lA/view?usp=share_link',
       epub: 'https://drive.google.com/file/d/1vUj_MsZqrZjVS67n1pVOSbZ4w0dBdGrT/view?usp=share_link'
+      mp3: 'https://drive.google.com/file/d/1vUj_MsZqrZjVS67n1pVOSbZ4w0dBdGrT/view?usp=sharing'
     }
   },
   {
@@ -49,6 +54,9 @@ const books = [
     author: 'Автор',
     price: 500,
     available: true,
+    imageUrl: 'https://drive.google.com/file/d/1aY7kAq_k_mCfF5Ao6cjN15U9dXVhBXZA/view?usp=sharing',
+    description: `Победишь себя – победишь мир. 
+Книга о внутренней силе и той стороне личности, которая влияет на всё.`,
     driveLinks: {
       pdf: 'https://drive.google.com/file/d/1QRi7ZeJwuQ81K9L2eeY_cTZRuy4WNw56/view?usp=share_link'
     }
@@ -59,16 +67,23 @@ const books = [
     author: 'Автор',
     price: 500,
     available: true,
+    imageUrl: 'https://drive.google.com/file/d/1NoumRji3fPidQyj9lIwZMLH8wX8kPNRN/view?usp=sharing',
+    description: `Существуют ли сейчас ведьмы? 
+
+Каждая женщина — ведьма. Простые практики и медитации, которые меняют внутренний мир.`,
     driveLinks: {
       pdf: 'https://drive.google.com/file/d/1wTGjTeOQyV_NS76kVjUq9LZ848PBEDjC/view?usp=share_link'
     }
   },
   {
     id: 4,
-    title: 'Карфаген',
+    title: 'Легенда Карфагена',
     author: 'Автор',
     price: 500,
     available: false, // Скоро выход
+    imageUrl: 'https://drive.google.com/file/d/1Q4L_-Lt1FZ2AZR8-at2zxa-2AZHZRqYQ/view?usp=sharing',
+    description: `Пророчества Дидоны, рождение Ганнибала Барки, великая любовь и судьба Карфагена.
+Скоро в продаже`,
     driveLinks: {}
   }
 ];
@@ -82,11 +97,7 @@ bot.onText(/\/start/, (msg) => {
 
   const welcomeText = `Добро пожаловать в мир книг Виктории Байн 📚✨
 
-
-
 Здесь каждая история открывается тем, кто готов услышать 🖤
-
-
 
 Переходите в каталог и выбирайте книгу 👇🏻`;
 
@@ -96,7 +107,7 @@ bot.onText(/\/start/, (msg) => {
 
   const keyboard = {
     inline_keyboard: [
-      [{ text: '📖 Показать витрину', callback_data: 'show_catalog' }]
+      [{ text: '📖 Витрина книг', callback_data: 'show_catalog' }]
     ]
   };
 
@@ -115,10 +126,10 @@ bot.onText(/\/start/, (msg) => {
 // ПОКАЗАТЬ КАТАЛОГ
 // ============================================
 function showCatalog(chatId) {
-  let catalogText = '📚 *Наш каталог книг:*\n\n';
+  let catalogText = '📚 *Витрина книг:*\n\n';
 
   books.forEach(book => {
-    catalogText += `*${book.id}. "${book.title}"*\n`;
+    catalogText += `*📖 "${book.title}"*\n`;
     catalogText += `💰 Цена: ${book.price} руб.\n`;
     if (!book.available) {
       catalogText += `⏳ _Скоро в продаже_\n`;
@@ -156,12 +167,15 @@ function showBookDetails(chatId, bookId) {
     return;
   }
 
-  const bookText = `
-📚 *${book.title}*
-💰 Цена: ${book.price} руб.
-
-Выберите формат книги:
-  `;
+  // Формируем текст с описанием
+  let bookText = `📚 *${book.title}*\n👛 Цена: ${book.price} руб.\n`;
+  
+  // Добавляем описание, если оно есть
+  if (book.description && book.description.trim() !== '') {
+    bookText += `\n${book.description}\n`;
+  }
+  
+  bookText += `\nВыберите формат книги:`;
 
   // Создаем кнопки только для доступных форматов
   const formatButtons = [];
@@ -175,6 +189,9 @@ function showBookDetails(chatId, bookId) {
   if (book.driveLinks.fb2) {
     formatButtons.push([{ text: '📝 FB2', callback_data: `format_${bookId}_fb2` }]);
   }
+  if (book.driveLinks.audio || book.driveLinks.mp3) {
+    formatButtons.push([{ text: '🎧 Аудио', callback_data: `format_${bookId}_audio` }]);
+  }
 
   formatButtons.push([{ text: '🔙 Назад к каталогу', callback_data: 'show_catalog' }]);
 
@@ -182,10 +199,28 @@ function showBookDetails(chatId, bookId) {
     inline_keyboard: formatButtons
   };
 
-  bot.sendMessage(chatId, bookText, {
-    parse_mode: 'Markdown',
-    reply_markup: keyboard
-  });
+  // Если есть изображение, отправляем фото с текстом
+  if (book.imageUrl && book.imageUrl.trim() !== '') {
+    const bookImageLink = getDirectDownloadLink(book.imageUrl);
+    bot.sendPhoto(chatId, bookImageLink, {
+      caption: bookText,
+      parse_mode: 'Markdown',
+      reply_markup: keyboard
+    }).catch((error) => {
+      console.error('Ошибка при отправке фото книги:', error);
+      // Если не удалось отправить фото, отправляем только текст
+      bot.sendMessage(chatId, bookText, {
+        parse_mode: 'Markdown',
+        reply_markup: keyboard
+      });
+    });
+  } else {
+    // Если нет изображения, отправляем только текст
+    bot.sendMessage(chatId, bookText, {
+      parse_mode: 'Markdown',
+      reply_markup: keyboard
+    });
+  }
 }
 
 // ============================================
@@ -210,11 +245,10 @@ function showPaymentInfo(chatId, bookId, format) {
 
 📚 Книга: ${book.title}
 📄 Формат: ${format.toUpperCase()}
-💰 Цена: ${book.price} руб.
+👛 Цена: ${book.price} руб.
 
 💳 *РЕКВИЗИТЫ ДЛЯ ОПЛАТЫ:*
-Номер карты: \`2202 2063 4567 8901\`
-Получатель: Иванов Иван Иванович
+Номер карты: \`2200 7019 3298 7578\`
 
 📝 *ИНСТРУКЦИЯ ПО ОПЛАТЕ:*
 1. Переведите ${book.price} руб. на указанную карту
@@ -223,7 +257,7 @@ function showPaymentInfo(chatId, bookId, format) {
 4. Дождитесь подтверждение оплаты
 5. Получите ссылку на скачивание книги!
 
-⏰ Проверка оплаты обычно занимает 10-30 минут.
+⏰ Проверка оплаты обычно занимает до 10 минут.
 
 _Просто отправьте фото чека следующим сообщением._
   `;
@@ -267,8 +301,7 @@ bot.on('photo', (msg) => {
   bot.sendMessage(chatId, `
 ✅ *Спасибо! Чек получен.*
 
-🔍 Ваш заказ отправлен администратору на проверку.
-⏰ Обычно это занимает 10-30 минут.
+⏰ Минуточку... Проверяем оплату.
 
 Мы уведомим вас, как только оплата будет подтверждена! 🎉
   `, { parse_mode: 'Markdown' });
@@ -314,7 +347,11 @@ function confirmOrder(adminChatId, userId) {
 
   const book = books.find(b => b.id === order.bookId);
   const formatLower = order.format.toLowerCase();
-  const driveLink = book.driveLinks[formatLower];
+  // Для аудио проверяем и audio, и mp3
+  let driveLink = book.driveLinks[formatLower];
+  if (!driveLink && formatLower === 'audio') {
+    driveLink = book.driveLinks.mp3;
+  }
 
   if (!driveLink) {
     bot.sendMessage(adminChatId, `❌ Ссылка на файл в формате ${order.format} не найдена`);
@@ -345,7 +382,11 @@ ${downloadLink}
 3. Файл загрузится на ваше устройство
 
 Спасибо за покупку! 🙏
-Если возникнут вопросы, обращайтесь к администратору.
+
+С наступающим Новым годом! 🎄💚
+Пусть он будет добрым, спокойным и щедрым на чудеса. ✨🎁
+
+Если ссылка не открывается -  напишите, я отправлю её ещё раз.
 Приятного чтения! 📖✨
   `, { parse_mode: 'Markdown' });
 

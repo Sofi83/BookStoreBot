@@ -72,6 +72,8 @@ const books = [
     author: 'Автор',
     price: 500,
     available: true,
+    imageUrl: '',
+    description: '',
     driveLinks: {
       pdf: 'https://drive.google.com/file/d/1C2aCMZifPJMErlbTZ5BTqJomjj-w30lA/view?usp=share_link',
       epub: 'https://drive.google.com/file/d/1vUj_MsZqrZjVS67n1pVOSbZ4w0dBdGrT/view?usp=share_link'
@@ -83,6 +85,8 @@ const books = [
     author: 'Автор',
     price: 500,
     available: true,
+    imageUrl: '',
+    description: '',
     driveLinks: {
       pdf: 'https://drive.google.com/file/d/1QRi7ZeJwuQ81K9L2eeY_cTZRuy4WNw56/view?usp=share_link'
     }
@@ -93,6 +97,8 @@ const books = [
     author: 'Автор',
     price: 500,
     available: true,
+    imageUrl: '',
+    description: '',
     driveLinks: {
       pdf: 'https://drive.google.com/file/d/1wTGjTeOQyV_NS76kVjUq9LZ848PBEDjC/view?usp=share_link'
     }
@@ -103,6 +109,8 @@ const books = [
     author: 'Автор',
     price: 500,
     available: false, // Скоро выход
+    imageUrl: '',
+    description: '',
     driveLinks: {}
   }
 ];
@@ -190,12 +198,15 @@ function showBookDetails(chatId, bookId) {
     return;
   }
 
-  const bookText = `
-📚 *${book.title}*
-💰 Цена: ${book.price} руб.
-
-Выберите формат книги:
-  `;
+  // Формируем текст с описанием
+  let bookText = `📚 *${book.title}*\n💰 Цена: ${book.price} руб.\n`;
+  
+  // Добавляем описание, если оно есть
+  if (book.description && book.description.trim() !== '') {
+    bookText += `\n${book.description}\n`;
+  }
+  
+  bookText += `\nВыберите формат книги:`;
 
   // Создаем кнопки только для доступных форматов
   const formatButtons = [];
@@ -209,6 +220,9 @@ function showBookDetails(chatId, bookId) {
   if (book.driveLinks.fb2) {
     formatButtons.push([{ text: '📝 FB2', callback_data: `format_${bookId}_fb2` }]);
   }
+  if (book.driveLinks.audio || book.driveLinks.mp3) {
+    formatButtons.push([{ text: '🎧 Аудио', callback_data: `format_${bookId}_audio` }]);
+  }
 
   formatButtons.push([{ text: '🔙 Назад к каталогу', callback_data: 'show_catalog' }]);
 
@@ -216,10 +230,28 @@ function showBookDetails(chatId, bookId) {
     inline_keyboard: formatButtons
   };
 
-  bot.sendMessage(chatId, bookText, {
-    parse_mode: 'Markdown',
-    reply_markup: keyboard
-  });
+  // Если есть изображение, отправляем фото с текстом
+  if (book.imageUrl && book.imageUrl.trim() !== '') {
+    const bookImageLink = getDirectDownloadLink(book.imageUrl);
+    bot.sendPhoto(chatId, bookImageLink, {
+      caption: bookText,
+      parse_mode: 'Markdown',
+      reply_markup: keyboard
+    }).catch((error) => {
+      console.error('Ошибка при отправке фото книги:', error);
+      // Если не удалось отправить фото, отправляем только текст
+      bot.sendMessage(chatId, bookText, {
+        parse_mode: 'Markdown',
+        reply_markup: keyboard
+      });
+    });
+  } else {
+    // Если нет изображения, отправляем только текст
+    bot.sendMessage(chatId, bookText, {
+      parse_mode: 'Markdown',
+      reply_markup: keyboard
+    });
+  }
 }
 
 // ============================================
@@ -366,7 +398,11 @@ function confirmOrder(adminChatId, userId) {
 
   const book = books.find(b => b.id === order.bookId);
   const formatLower = order.format.toLowerCase();
-  const driveLink = book.driveLinks[formatLower];
+  // Для аудио проверяем и audio, и mp3
+  let driveLink = book.driveLinks[formatLower];
+  if (!driveLink && formatLower === 'audio') {
+    driveLink = book.driveLinks.mp3;
+  }
 
   if (!driveLink) {
     bot.sendMessage(adminChatId, `❌ Ссылка на файл в формате ${order.format} не найдена`);
