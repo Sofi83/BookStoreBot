@@ -44,8 +44,8 @@ const books = [
  Воспоминания — слишком ясные, слишком живые. И постепенно она понимает: это не фантазии. Это память другой жизни. Она — Диана. Но когда-то она была Дидоной — царицей Карфагена.`,
     driveLinks: {
       pdf: 'https://drive.google.com/file/d/1C2aCMZifPJMErlbTZ5BTqJomjj-w30lA/view?usp=share_link',
-      epub: 'https://drive.google.com/file/d/1vUj_MsZqrZjVS67n1pVOSbZ4w0dBdGrT/view?usp=share_link'
-      mp3: 'https://drive.google.com/file/d/1vUj_MsZqrZjVS67n1pVOSbZ4w0dBdGrT/view?usp=sharing'
+      epub: 'https://drive.google.com/file/d/1vUj_MsZqrZjVS67n1pVOSbZ4w0dBdGrT/view?usp=share_link',
+      audio: 'https://drive.google.com/file/d/1j3wNtQ9WmO-Cp00qPjO6kzV_h9yT3Kep/view?usp=sharing'
     }
   },
   {
