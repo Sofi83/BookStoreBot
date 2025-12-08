@@ -189,7 +189,7 @@ function showBookDetails(chatId, bookId) {
   if (book.driveLinks.fb2) {
     formatButtons.push([{ text: '📝 FB2', callback_data: `format_${bookId}_fb2` }]);
   }
-  if (book.driveLinks.audio || book.driveLinks.mp3) {
+  if (book.driveLinks.audio) {
     formatButtons.push([{ text: '🎧 Аудио', callback_data: `format_${bookId}_audio` }]);
   }
 
@@ -350,7 +350,7 @@ function confirmOrder(adminChatId, userId) {
   // Для аудио проверяем и audio, и mp3
   let driveLink = book.driveLinks[formatLower];
   if (!driveLink && formatLower === 'audio') {
-    driveLink = book.driveLinks.mp3;
+    driveLink = book.driveLinks.audio;
   }
 
   if (!driveLink) {
