@@ -100,7 +100,19 @@ bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
   const userName = msg.from.first_name;
 
-  const welcomeText = `GHbdtn dctv`;
+  const welcomeText = `Добро пожаловать в мир книг Виктории Байн 📚✨
+
+
+
+Здесь каждая история открывается тем, кто готов услышать 🖤
+
+
+
+Переходите в каталог и выбирайте книгу 👇🏻`;
+
+  // Ссылка на приветственную картинку
+  const welcomeImageUrl = 'https://drive.google.com/file/d/1fFXVO4d7nWAQfKMFy6YxOBk4HxuQCXFA/view?usp=share_link';
+  const welcomeImageLink = getDirectDownloadLink(welcomeImageUrl);
 
   const keyboard = {
     inline_keyboard: [
@@ -108,7 +120,11 @@ bot.onText(/\/start/, (msg) => {
     ]
   };
 
-  bot.sendMessage(chatId, welcomeText, { reply_markup: keyboard });
+  // Отправляем фото с текстом
+  bot.sendPhoto(chatId, welcomeImageLink, {
+    caption: welcomeText,
+    reply_markup: keyboard
+  });
 });
 
 // ============================================
