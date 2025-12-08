@@ -100,11 +100,7 @@ bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
   const userName = msg.from.first_name;
 
-  const welcomeText = `Добро пожаловать в мир Виктории Байн 📚✨
-
-Здесь каждая история открывается тем, кто готов услышать 🖤
-
-Витрина книг 👇🏻`;
+  const welcomeText = `GHbdtn dctv`;
 
   const keyboard = {
     inline_keyboard: [
