@@ -130,7 +130,7 @@ function showCatalog(chatId) {
 
   books.forEach(book => {
     catalogText += `*📖 "${book.title}"*\n`;
-    catalogText += `💰 Цена: ${book.price} руб.\n`;
+    catalogText += `👛 Цена: ${book.price} руб.\n`;
     if (!book.available) {
       catalogText += `⏳ _Скоро в продаже_\n`;
     }
