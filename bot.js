@@ -49,15 +49,28 @@ const bot = new TelegramBot(token, { polling: true });
 const orders = {};
 
 // ============================================
-// ФУНКЦИЯ ПОЛУЧЕНИЯ ПРЯМОЙ ССЫЛКИ НА СКАЧИВАНИЕ
+// ФУНКЦИИ ПОЛУЧЕНИЯ ПРЯМЫХ ССЫЛОК
 // ============================================
+// Для изображений (просмотр)
+function getDirectViewLink(driveUrl) {
+  // Извлекаем ID файла из ссылки Google Drive
+  const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileIdMatch && fileIdMatch[1]) {
+    const fileId = fileIdMatch[1];
+    // Для изображений используем формат просмотра
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  }
+  return driveUrl; // Возвращаем оригинальную ссылку, если не удалось преобразовать
+}
+
+// Для файлов (скачивание)
 function getDirectDownloadLink(driveUrl) {
   // Извлекаем ID файла из ссылки Google Drive
   const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (fileIdMatch && fileIdMatch[1]) {
     const fileId = fileIdMatch[1];
-    // Для изображений используем формат просмотра, для файлов - скачивание
-    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    // Формируем прямую ссылку на скачивание
+    return `https://drive.google.com/uc?export=download&id=${fileId}`;
   }
   return driveUrl; // Возвращаем оригинальную ссылку, если не удалось преобразовать
 }
@@ -134,7 +147,7 @@ bot.onText(/\/start/, (msg) => {
 
   // Ссылка на приветственную картинку
   const welcomeImageUrl = 'https://drive.google.com/file/d/1fFXVO4d7nWAQfKMFy6YxOBk4HxuQCXFA/view?usp=share_link';
-  const welcomeImageLink = getDirectDownloadLink(welcomeImageUrl);
+  const welcomeImageLink = getDirectViewLink(welcomeImageUrl);
 
   const keyboard = {
     inline_keyboard: [
@@ -232,7 +245,7 @@ function showBookDetails(chatId, bookId) {
 
   // Если есть изображение, отправляем фото с текстом
   if (book.imageUrl && book.imageUrl.trim() !== '') {
-    const bookImageLink = getDirectDownloadLink(book.imageUrl);
+    const bookImageLink = getDirectViewLink(book.imageUrl);
     bot.sendPhoto(chatId, bookImageLink, {
       caption: bookText,
       parse_mode: 'Markdown',
@@ -371,19 +384,6 @@ bot.on('photo', (msg) => {
   bot.sendMessage(ADMIN_ID, 'Выберите действие:', { reply_markup: adminKeyboard });
 });
 
-// ============================================
-// ФУНКЦИЯ ПОЛУЧЕНИЯ ПРЯМОЙ ССЫЛКИ НА СКАЧИВАНИЕ
-// ============================================
-function getDirectDownloadLink(driveUrl) {
-  // Извлекаем ID файла из ссылки Google Drive
-  const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch && fileIdMatch[1]) {
-    const fileId = fileIdMatch[1];
-    // Формируем прямую ссылку на скачивание
-    return `https://drive.google.com/uc?export=download&id=${fileId}`;
-  }
-  return driveUrl; // Возвращаем оригинальную ссылку, если не удалось преобразовать
-}
 
 // ============================================
 // ПОДТВЕРЖДЕНИЕ АДМИНОМ
@@ -397,15 +397,25 @@ function confirmOrder(adminChatId, userId) {
   }
 
   const book = books.find(b => b.id === order.bookId);
+  
+  if (!book) {
+    bot.sendMessage(adminChatId, `❌ Книга с ID ${order.bookId} не найдена`);
+    return;
+  }
+
   const formatLower = order.format.toLowerCase();
-  // Для аудио проверяем и audio, и mp3
+  
+  // Получаем ссылку на файл
   let driveLink = book.driveLinks[formatLower];
+  
+  // Для аудио проверяем и audio, и mp3
   if (!driveLink && formatLower === 'audio') {
-    driveLink = book.driveLinks.mp3;
+    driveLink = book.driveLinks.mp3 || book.driveLinks.audio;
   }
 
   if (!driveLink) {
-    bot.sendMessage(adminChatId, `❌ Ссылка на файл в формате ${order.format} не найдена`);
+    console.error(`❌ Ссылка на файл не найдена. Книга: ${book.title}, Формат: ${order.format}, Доступные форматы:`, Object.keys(book.driveLinks));
+    bot.sendMessage(adminChatId, `❌ Ссылка на файл в формате ${order.format} не найдена для книги "${book.title}". Доступные форматы: ${Object.keys(book.driveLinks).join(', ')}`);
     return;
   }
 
