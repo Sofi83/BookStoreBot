@@ -536,13 +536,17 @@ bot.on('callback_query', (query) => {
   // Подтверждение админом
   else if (data.startsWith('confirm_')) {
     const userId = data.split('_')[1];
-    confirmOrder(chatId, userId);
+    // Преобразуем userId в число для поиска в orders (так как там ключи - числа)
+    const userIdNum = parseInt(userId, 10);
+    confirmOrder(chatId, userIdNum);
   }
   
   // Отклонение админом
   else if (data.startsWith('reject_')) {
     const userId = data.split('_')[1];
-    rejectOrder(chatId, userId);
+    // Преобразуем userId в число для поиска в orders (так как там ключи - числа)
+    const userIdNum = parseInt(userId, 10);
+    rejectOrder(chatId, userIdNum);
   }
 
   // Убираем "часики" с кнопки
