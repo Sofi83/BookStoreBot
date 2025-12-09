@@ -15,15 +15,28 @@ const ADMIN_ID = process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
 const orders = {};
 
 // ============================================
-// ФУНКЦИЯ ПОЛУЧЕНИЯ ПРЯМОЙ ССЫЛКИ НА СКАЧИВАНИЕ
+// ФУНКЦИИ ПОЛУЧЕНИЯ ПРЯМЫХ ССЫЛОК
 // ============================================
+// Для изображений (просмотр)
+function getDirectViewLink(driveUrl) {
+  // Извлекаем ID файла из ссылки Google Drive
+  const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileIdMatch && fileIdMatch[1]) {
+    const fileId = fileIdMatch[1];
+    // Для изображений используем формат просмотра
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  }
+  return driveUrl; // Возвращаем оригинальную ссылку, если не удалось преобразовать
+}
+
+// Для файлов (скачивание)
 function getDirectDownloadLink(driveUrl) {
   // Извлекаем ID файла из ссылки Google Drive
   const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (fileIdMatch && fileIdMatch[1]) {
     const fileId = fileIdMatch[1];
-    // Для изображений используем формат просмотра, для файлов - скачивание
-    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    // Формируем прямую ссылку на скачивание
+    return `https://drive.google.com/uc?export=download&id=${fileId}`;
   }
   return driveUrl; // Возвращаем оригинальную ссылку, если не удалось преобразовать
 }
@@ -103,7 +116,7 @@ bot.onText(/\/start/, (msg) => {
 
   // Ссылка на приветственную картинку
   const welcomeImageUrl = 'https://drive.google.com/file/d/1fFXVO4d7nWAQfKMFy6YxOBk4HxuQCXFA/view?usp=share_link';
-  const welcomeImageLink = getDirectDownloadLink(welcomeImageUrl);
+  const welcomeImageLink = getDirectViewLink(welcomeImageUrl);
 
   const keyboard = {
     inline_keyboard: [
@@ -201,7 +214,7 @@ function showBookDetails(chatId, bookId) {
 
   // Если есть изображение, отправляем фото с текстом
   if (book.imageUrl && book.imageUrl.trim() !== '') {
-    const bookImageLink = getDirectDownloadLink(book.imageUrl);
+    const bookImageLink = getDirectViewLink(book.imageUrl);
     bot.sendPhoto(chatId, bookImageLink, {
       caption: bookText,
       parse_mode: 'Markdown',
@@ -367,8 +380,12 @@ function confirmOrder(adminChatId, userId) {
   // Получаем прямую ссылку на скачивание
   const downloadLink = getDirectDownloadLink(driveLink);
 
-  // Уведомление пользователю
-  bot.sendMessage(userId, `
+  // Ссылка на видео
+  const videoUrl = 'https://drive.google.com/file/d/1t-11J0whrVTMCDt7mi7Yld1lV7mYJWWG/view?usp=share_link';
+  const videoLink = getDirectDownloadLink(videoUrl);
+
+  // Текст уведомления
+  const notificationText = `
 🎉 *Отлично! Ваша оплата подтверждена!*
 
 📚 Ваша книга "${order.bookTitle}" в формате ${order.format} готова к скачиванию.
@@ -388,7 +405,17 @@ ${downloadLink}
 
 Если ссылка не открывается -  напишите, я отправлю её ещё раз.
 Приятного чтения! 📖✨
-  `, { parse_mode: 'Markdown' });
+  `;
+
+  // Уведомление пользователю с видео
+  bot.sendVideo(userId, videoLink, {
+    caption: notificationText,
+    parse_mode: 'Markdown'
+  }).catch((error) => {
+    console.error('Ошибка при отправке видео:', error);
+    // Если не удалось отправить видео, отправляем только текст
+    bot.sendMessage(userId, notificationText, { parse_mode: 'Markdown' });
+  });
 
   // Удаляем заказ из памяти
   delete orders[userId];
