@@ -4,7 +4,7 @@ node_modules/
 yarn.lock
 
 # Environment variables
-.env
+# .env
 .env.local
 .env.*.local
 
