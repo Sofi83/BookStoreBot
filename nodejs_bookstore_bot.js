@@ -359,15 +359,25 @@ function confirmOrder(adminChatId, userId) {
   }
 
   const book = books.find(b => b.id === order.bookId);
+  
+  if (!book) {
+    bot.sendMessage(adminChatId, `❌ Книга с ID ${order.bookId} не найдена`);
+    return;
+  }
+
   const formatLower = order.format.toLowerCase();
-  // Для аудио проверяем и audio, и mp3
+  
+  // Получаем ссылку на файл
   let driveLink = book.driveLinks[formatLower];
+  
+  // Для аудио проверяем и audio, и mp3
   if (!driveLink && formatLower === 'audio') {
-    driveLink = book.driveLinks.audio;
+    driveLink = book.driveLinks.mp3 || book.driveLinks.audio;
   }
 
   if (!driveLink) {
-    bot.sendMessage(adminChatId, `❌ Ссылка на файл в формате ${order.format} не найдена`);
+    console.error(`❌ Ссылка на файл не найдена. Книга: ${book.title}, Формат: ${order.format}, Доступные форматы:`, Object.keys(book.driveLinks));
+    bot.sendMessage(adminChatId, `❌ Ссылка на файл в формате ${order.format} не найдена для книги "${book.title}". Доступные форматы: ${Object.keys(book.driveLinks).join(', ')}`);
     return;
   }
 
@@ -506,13 +516,25 @@ bot.on('callback_query', (query) => {
   // Подтверждение админом
   else if (data.startsWith('confirm_')) {
     const userId = data.split('_')[1];
-    confirmOrder(chatId, userId);
+    // Преобразуем userId в число для поиска в orders (так как там ключи - числа)
+    const userIdNum = parseInt(userId, 10);
+    if (isNaN(userIdNum)) {
+      bot.sendMessage(chatId, '❌ Ошибка: неверный ID пользователя');
+      return;
+    }
+    confirmOrder(chatId, userIdNum);
   }
   
   // Отклонение админом
   else if (data.startsWith('reject_')) {
     const userId = data.split('_')[1];
-    rejectOrder(chatId, userId);
+    // Преобразуем userId в число для поиска в orders (так как там ключи - числа)
+    const userIdNum = parseInt(userId, 10);
+    if (isNaN(userIdNum)) {
+      bot.sendMessage(chatId, '❌ Ошибка: неверный ID пользователя');
+      return;
+    }
+    rejectOrder(chatId, userIdNum);
   }
 
   // Убираем "часики" с кнопки
