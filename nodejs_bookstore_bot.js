@@ -140,12 +140,13 @@ bot.onText(/\/start/, (msg) => {
 // ============================================
 function showCatalog(chatId) {
   let catalogText = '📚 *Витрина книг:*\n\n';
-
   books.forEach(book => {
     catalogText += `*📖 "${book.title}"*\n`;
-    catalogText += `👛 Цена: ${book.price} руб.\n`;
+    
     if (!book.available) {
       catalogText += `⏳ _Скоро в продаже_\n`;
+    } else {
+      catalogText += `👛 Цена: ${book.price} руб.\n`;
     }
     catalogText += `\n`;
   });
