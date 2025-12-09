@@ -306,7 +306,10 @@ function showPaymentInfo(chatId, bookId, format) {
 👛 Цена: ${book.price} руб.
 
 💳 *РЕКВИЗИТЫ ДЛЯ ОПЛАТЫ:*
-Номер карты: \`${CARD_NUMBER}\`
+Номер карты:
+\`\`\`
+${CARD_NUMBER}
+\`\`\`
 
 📝 *ИНСТРУКЦИЯ ПО ОПЛАТЕ:*
 1. Переведите ${book.price} руб. на указанную карту
