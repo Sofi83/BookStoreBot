@@ -35,13 +35,44 @@ function getDirectViewLink(driveUrl) {
 // Для файлов (скачивание)
 function getDirectDownloadLink(driveUrl) {
   // Извлекаем ID файла из ссылки Google Drive
-  const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch && fileIdMatch[1]) {
-    const fileId = fileIdMatch[1];
-    // Формируем прямую ссылку на скачивание
-    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+  // Поддерживаем разные форматы ссылок:
+  // https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+  // https://drive.google.com/file/d/FILE_ID/view?usp=share_link
+  // https://drive.google.com/open?id=FILE_ID
+  let fileId = null;
+  
+  // Формат 1: /file/d/FILE_ID/
+  const fileIdMatch1 = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileIdMatch1 && fileIdMatch1[1]) {
+    fileId = fileIdMatch1[1];
   }
-  return driveUrl; // Возвращаем оригинальную ссылку, если не удалось преобразовать
+  
+  // Формат 2: /d/FILE_ID/
+  if (!fileId) {
+    const fileIdMatch2 = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch2 && fileIdMatch2[1]) {
+      fileId = fileIdMatch2[1];
+    }
+  }
+  
+  // Формат 3: ?id=FILE_ID
+  if (!fileId) {
+    const fileIdMatch3 = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch3 && fileIdMatch3[1]) {
+      fileId = fileIdMatch3[1];
+    }
+  }
+  
+  if (fileId) {
+    // Используем формат для прямого скачивания
+    // Добавляем параметр confirm для обхода предупреждения Google Drive
+    // Для больших файлов это помогает автоматически начать скачивание
+    return `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
+  }
+  
+  // Если не удалось извлечь ID, возвращаем оригинальную ссылку
+  console.warn('Не удалось извлечь ID файла из ссылки:', driveUrl);
+  return driveUrl;
 }
 
 // ============================================
@@ -391,6 +422,8 @@ function confirmOrder(adminChatId, userId) {
 
   // Получаем прямую ссылку на скачивание
   const downloadLink = getDirectDownloadLink(driveLink);
+  console.log(`🔗 Сформирована ссылка на скачивание: ${downloadLink}`);
+  console.log(`📄 Исходная ссылка: ${driveLink}`);
 
   // Ссылка на видео
   const videoUrl = 'https://drive.google.com/file/d/1t-11J0whrVTMCDt7mi7Yld1lV7mYJWWG/view?usp=share_link';
