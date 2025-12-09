@@ -398,7 +398,7 @@ function confirmOrder(adminChatId, userId) {
 📚 Ваша книга "${order.bookTitle}" в формате ${order.format} готова к скачиванию.
 
 🔗 *Ссылка на скачивание:*
-${downloadLink}
+[📥 Скачать книгу](${downloadLink})
 
 📥 *Как скачать:*
 1. Нажмите на ссылку выше
