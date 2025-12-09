@@ -92,7 +92,7 @@ const books = [
     driveLinks: {
       pdf: 'https://drive.google.com/file/d/1C2aCMZifPJMErlbTZ5BTqJomjj-w30lA/view?usp=share_link',
       epub: 'https://drive.google.com/file/d/1vUj_MsZqrZjVS67n1pVOSbZ4w0dBdGrT/view?usp=share_link',
-      audio: 'https://drive.google.com/file/d/1j3wNtQ9WmO-Cp00qPjO6kzV_h9yT3Kep/view?usp=sharing'
+      audio: 'https://drive.google.com/file/d/1vUj_MsZqrZjVS67n1pVOSbZ4w0dBdGrT/view?usp=share_link'
     }
   },
   {
