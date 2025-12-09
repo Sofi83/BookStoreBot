@@ -275,20 +275,30 @@ function showBookDetails(chatId, bookId) {
 // ОФОРМЛЕНИЕ ЗАКАЗА И ОПЛАТА
 // ============================================
 function showPaymentInfo(chatId, bookId, format) {
-  const book = books.find(b => b.id === bookId);
-  const userId = chatId;
+  try {
+    const book = books.find(b => b.id === bookId);
+    
+    if (!book) {
+      console.error(`❌ Книга с ID ${bookId} не найдена`);
+      bot.sendMessage(chatId, '❌ Книга не найдена. Пожалуйста, выберите книгу из каталога.');
+      return;
+    }
 
-  // Создаем заказ
-  orders[userId] = {
-    bookId: bookId,
-    bookTitle: book.title,
-    format: format.toUpperCase(),
-    price: book.price,
-    status: 'awaiting_payment',
-    timestamp: new Date()
-  };
+    const userId = chatId;
+    
+    console.log(`📝 Создание заказа: userId=${userId}, bookId=${bookId}, format=${format}`);
 
-  const paymentText = `
+    // Создаем заказ
+    orders[userId] = {
+      bookId: bookId,
+      bookTitle: book.title,
+      format: format.toUpperCase(),
+      price: book.price,
+      status: 'awaiting_payment',
+      timestamp: new Date()
+    };
+
+    const paymentText = `
 ✅ *Ваш заказ оформлен!*
 
 📚 Книга: ${book.title}
@@ -297,7 +307,6 @@ function showPaymentInfo(chatId, bookId, format) {
 
 💳 *РЕКВИЗИТЫ ДЛЯ ОПЛАТЫ:*
 Номер карты: \`${CARD_NUMBER}\`
-${CARD_HOLDER ? `Получатель: ${CARD_HOLDER}\n` : ''}
 
 📝 *ИНСТРУКЦИЯ ПО ОПЛАТЕ:*
 1. Переведите ${book.price} руб. на указанную карту
@@ -311,17 +320,32 @@ ${CARD_HOLDER ? `Получатель: ${CARD_HOLDER}\n` : ''}
 _Просто отправьте фото чека следующим сообщением._
   `;
 
-  const keyboard = {
-    inline_keyboard: [
-      [{ text: '❌ Отменить заказ', callback_data: 'cancel_order' }],
-      [{ text: '🔙 К каталогу', callback_data: 'show_catalog' }]
-    ]
-  };
+    const keyboard = {
+      inline_keyboard: [
+        [{ text: '❌ Отменить заказ', callback_data: 'cancel_order' }],
+        [{ text: '🔙 К каталогу', callback_data: 'show_catalog' }]
+      ]
+    };
 
-  bot.sendMessage(chatId, paymentText, {
-    parse_mode: 'Markdown',
-    reply_markup: keyboard
-  });
+    bot.sendMessage(chatId, paymentText, {
+      parse_mode: 'Markdown',
+      reply_markup: keyboard
+    }).then(() => {
+      console.log(`✅ Сообщение с реквизитами отправлено пользователю ${chatId} для формата ${format}`);
+    }).catch((error) => {
+      console.error(`❌ Ошибка при отправке сообщения с реквизитами:`, error);
+      // Пробуем отправить без Markdown
+      const plainText = paymentText.replace(/\*/g, '').replace(/_/g, '');
+      bot.sendMessage(chatId, plainText, { reply_markup: keyboard })
+        .catch((retryError) => {
+          console.error(`❌ Критическая ошибка при отправке сообщения:`, retryError);
+          bot.sendMessage(chatId, '❌ Произошла ошибка. Пожалуйста, попробуйте еще раз или обратитесь к администратору.');
+        });
+    });
+  } catch (error) {
+    console.error(`❌ Ошибка в функции showPaymentInfo:`, error);
+    bot.sendMessage(chatId, '❌ Произошла ошибка при оформлении заказа. Пожалуйста, попробуйте еще раз.');
+  }
 }
 
 // ============================================
@@ -572,6 +596,20 @@ bot.on('callback_query', (query) => {
     const parts = data.split('_');
     const bookId = parseInt(parts[1]);
     const format = parts[2];
+    console.log(`📥 Выбран формат: bookId=${bookId}, format=${format}, callback_data=${data}`);
+    
+    if (isNaN(bookId)) {
+      console.error(`❌ Неверный bookId: ${parts[1]}`);
+      bot.sendMessage(chatId, '❌ Ошибка: неверный ID книги. Пожалуйста, выберите книгу из каталога.');
+      return;
+    }
+    
+    if (!format) {
+      console.error(`❌ Формат не указан в callback_data: ${data}`);
+      bot.sendMessage(chatId, '❌ Ошибка: формат не указан. Пожалуйста, выберите формат еще раз.');
+      return;
+    }
+    
     showPaymentInfo(chatId, bookId, format);
   }
   
