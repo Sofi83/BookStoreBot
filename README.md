@@ -23,8 +23,7 @@
    ```env
    BOT_TOKEN=your_bot_token_here
    ADMIN_ID=your_telegram_user_id
-   CARD_NUMBER=2202 2063 4567 8901
-   CARD_HOLDER=Иванов Иван Иванович
+   CARD_NUMBER=your_card_number
    ```
    
    Или экспортируйте переменные в терминале:
