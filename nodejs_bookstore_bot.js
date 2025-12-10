@@ -452,7 +452,7 @@ function confirmOrder(adminChatId, userId) {
   console.log(`📄 Исходная ссылка: ${driveLink}`);
 
   // Ссылка на видео
-  const videoUrl = 'https://www.dropbox.com/scl/fi/9gl0evalqudb05nzt72k1/_-_.mp4?rlkey=r7jgwrm6l3oz0fejdk79agn53&st=yzigwjlj&dl=0';
+  const videoUrl = 'https://www.dropbox.com/scl/fi/d7jkme6edtuayc50i3rfd/_-_-_.mp4?rlkey=ijde6y4tu77aclexm2w7rbuia&st=pzry2529&dl=0';
   const videoLink = getDirectDownloadLink(videoUrl);
 
   // Текст уведомления
