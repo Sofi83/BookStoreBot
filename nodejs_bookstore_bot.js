@@ -41,9 +41,9 @@ function getDirectViewLink(dropboxUrl) {
 function getDirectDownloadLink(dropboxUrl) {
   // Для Dropbox: заменяем dl=0 на dl=1 для прямого скачивания
   if (dropboxUrl.includes('dropbox.com')) {
-    // Заменяем dl=0 на dl=1
-    if (dropboxUrl.includes('&dl=0') || dropboxUrl.includes('?dl=0')) {
-      return dropboxUrl.replace(/[?&]dl=0/, '?dl=1').replace(/&dl=1/, '?dl=1');
+    // Простая и надежная замена: заменяем все вхождения dl=0 на dl=1
+    if (dropboxUrl.includes('dl=0')) {
+      return dropboxUrl.replace(/dl=0/g, 'dl=1');
     }
     // Если dl параметр отсутствует, добавляем dl=1 для скачивания
     if (!dropboxUrl.includes('dl=')) {
@@ -437,6 +437,8 @@ function confirmOrder(adminChatId, userId) {
   // Ссылка на видео
   const videoUrl = 'https://www.dropbox.com/scl/fi/d7jkme6edtuayc50i3rfd/_-_-_.mp4?rlkey=ijde6y4tu77aclexm2w7rbuia&st=pzry2529&dl=0';
   const videoLink = getDirectDownloadLink(videoUrl);
+  console.log(`🎬 Исходная ссылка на видео: ${videoUrl}`);
+  console.log(`🎬 Прямая ссылка на видео: ${videoLink}`);
 
   // Текст уведомления
   const notificationText = `
@@ -481,13 +483,34 @@ function confirmOrder(adminChatId, userId) {
       delete orders[userId];
       
       // Затем пытаемся отправить видео отдельно (не критично, если не получится)
-      bot.sendVideo(userId, videoLink)
+      console.log(`🎬 Попытка отправить видео пользователю ${userId} по ссылке: ${videoLink}`);
+      
+      bot.sendVideo(userId, videoLink, {
+        supports_streaming: true
+      })
         .then(() => {
           console.log(`✅ Видео отправлено пользователю ${userId}`);
         })
-        .catch((error) => {
-          console.error('⚠️ Не удалось отправить видео (это не критично):', error);
-          // Видео не критично, основное сообщение уже отправлено
+        .catch((videoError) => {
+          console.error('⚠️ Ошибка при отправке видео через sendVideo:', videoError);
+          console.error('Детали ошибки:', JSON.stringify(videoError, null, 2));
+          
+          // Пробуем отправить как документ
+          bot.sendDocument(userId, videoLink)
+            .then(() => {
+              console.log(`✅ Видео отправлено как документ пользователю ${userId}`);
+            })
+            .catch((docError) => {
+              console.error('⚠️ Не удалось отправить видео как документ:', docError);
+              // Отправляем ссылку на видео в текстовом сообщении
+              bot.sendMessage(userId, `🎬 *Видео:*\n${videoLink}`, { parse_mode: 'Markdown' })
+                .then(() => {
+                  console.log(`✅ Ссылка на видео отправлена пользователю ${userId}`);
+                })
+                .catch((linkError) => {
+                  console.error('⚠️ Не удалось отправить ссылку на видео:', linkError);
+                });
+            });
         });
     })
     .catch((error) => {
