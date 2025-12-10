@@ -20,59 +20,42 @@ const orders = {};
 // ============================================
 // ФУНКЦИИ ПОЛУЧЕНИЯ ПРЯМЫХ ССЫЛОК
 // ============================================
-// Для изображений (просмотр)
-function getDirectViewLink(driveUrl) {
-  // Извлекаем ID файла из ссылки Google Drive
-  const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch && fileIdMatch[1]) {
-    const fileId = fileIdMatch[1];
-    // Для изображений используем формат просмотра
-    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+// Для изображений (просмотр) - Dropbox
+function getDirectViewLink(dropboxUrl) {
+  // Для Dropbox: для просмотра изображений используем оригинальную ссылку
+  // или заменяем dl=1 на dl=0, если нужно просмотр вместо скачивания
+  if (dropboxUrl.includes('dropbox.com')) {
+    // Если есть dl=1, заменяем на dl=0 для просмотра
+    if (dropboxUrl.includes('&dl=1') || dropboxUrl.includes('?dl=1')) {
+      return dropboxUrl.replace(/[?&]dl=1/, '?dl=0').replace(/&dl=0/, '?dl=0');
+    }
+    // Если dl параметр отсутствует, добавляем dl=0 для просмотра
+    if (!dropboxUrl.includes('dl=')) {
+      return dropboxUrl + (dropboxUrl.includes('?') ? '&' : '?') + 'dl=0';
+    }
   }
-  return driveUrl; // Возвращаем оригинальную ссылку, если не удалось преобразовать
+  return dropboxUrl; // Возвращаем оригинальную ссылку
 }
 
-// Для файлов (скачивание)
-function getDirectDownloadLink(driveUrl) {
-  // Извлекаем ID файла из ссылки Google Drive
-  // Поддерживаем разные форматы ссылок:
-  // https://drive.google.com/file/d/FILE_ID/view?usp=sharing
-  // https://drive.google.com/file/d/FILE_ID/view?usp=share_link
-  // https://drive.google.com/open?id=FILE_ID
-  let fileId = null;
-  
-  // Формат 1: /file/d/FILE_ID/
-  const fileIdMatch1 = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch1 && fileIdMatch1[1]) {
-    fileId = fileIdMatch1[1];
-  }
-  
-  // Формат 2: /d/FILE_ID/
-  if (!fileId) {
-    const fileIdMatch2 = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (fileIdMatch2 && fileIdMatch2[1]) {
-      fileId = fileIdMatch2[1];
+// Для файлов (скачивание) - Dropbox
+function getDirectDownloadLink(dropboxUrl) {
+  // Для Dropbox: заменяем dl=0 на dl=1 для прямого скачивания
+  if (dropboxUrl.includes('dropbox.com')) {
+    // Заменяем dl=0 на dl=1
+    if (dropboxUrl.includes('&dl=0') || dropboxUrl.includes('?dl=0')) {
+      return dropboxUrl.replace(/[?&]dl=0/, '?dl=1').replace(/&dl=1/, '?dl=1');
     }
-  }
-  
-  // Формат 3: ?id=FILE_ID
-  if (!fileId) {
-    const fileIdMatch3 = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (fileIdMatch3 && fileIdMatch3[1]) {
-      fileId = fileIdMatch3[1];
+    // Если dl параметр отсутствует, добавляем dl=1 для скачивания
+    if (!dropboxUrl.includes('dl=')) {
+      return dropboxUrl + (dropboxUrl.includes('?') ? '&' : '?') + 'dl=1';
     }
+    // Если уже есть dl=1, возвращаем как есть
+    return dropboxUrl;
   }
   
-  if (fileId) {
-    // Используем формат для прямого скачивания
-    // Добавляем параметр confirm для обхода предупреждения Google Drive
-    // Для больших файлов это помогает автоматически начать скачивание
-    return `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
-  }
-  
-  // Если не удалось извлечь ID, возвращаем оригинальную ссылку
-  console.warn('Не удалось извлечь ID файла из ссылки:', driveUrl);
-  return driveUrl;
+  // Если это не Dropbox ссылка, возвращаем оригинальную
+  console.warn('Ссылка не является Dropbox ссылкой:', dropboxUrl);
+  return dropboxUrl;
 }
 
 // ============================================
@@ -85,13 +68,13 @@ const books = [
     author: 'Автор',
     price: 500,
     available: true,
-    imageUrl: 'https://drive.google.com/file/d/1qb56gm96i3s52XAtUwoCaicNBotx0OJu/view?usp=sharing',
+    imageUrl: 'https://www.dropbox.com/scl/fi/ubsryaye44o668euqqlzu/_-_.png?rlkey=v8qhg30nc4w0koss89vynnsbr&st=kcmtndpw&dl=0',
     description: `История, которая перевернёт ваше представление о реальности
 Представьте: женщина в современном мире вдруг начинает видеть то, что не укладывается в логику.
  Воспоминания — слишком ясные, слишком живые. И постепенно она понимает: это не фантазии. Это память другой жизни. Она — Диана. Но когда-то она была Дидоной — царицей Карфагена.`,
     driveLinks: {
-      pdf: 'https://drive.google.com/file/d/1C2aCMZifPJMErlbTZ5BTqJomjj-w30lA/view?usp=share_link',
-      audio: 'https://drive.google.com/file/d/1vUj_MsZqrZjVS67n1pVOSbZ4w0dBdGrT/view?usp=share_link'
+      pdf: 'https://www.dropbox.com/scl/fi/lac57xtrxhhi8cqv89gg8/_-_-_.pdf?rlkey=bv8d4fjqj30pu2y1awz917wfd&st=13eg0fc5&dl=0',
+      audio: 'https://www.dropbox.com/scl/fi/7wcmciwhfeft9ej5guy63/_-_-_-_.mp3?rlkey=ihpu2hg4xpf3526sgrnhf13tu&st=4cvr3v1s&dl=0'
     }
   },
   {
@@ -100,11 +83,11 @@ const books = [
     author: 'Автор',
     price: 500,
     available: true,
-    imageUrl: 'https://drive.google.com/file/d/1aY7kAq_k_mCfF5Ao6cjN15U9dXVhBXZA/view?usp=sharing',
+    imageUrl: 'https://www.dropbox.com/scl/fi/vv7jpooquq4h67hrtlgal/_-_-_-_.png?rlkey=ygoxlmc7qzzbscux02uzylro7&st=q4v6kje7&dl=0',
     description: `Победишь себя – победишь мир. 
 Книга о внутренней силе и той стороне личности, которая влияет на всё.`,
     driveLinks: {
-      pdf: 'https://drive.google.com/file/d/1QRi7ZeJwuQ81K9L2eeY_cTZRuy4WNw56/view?usp=share_link'
+      pdf: 'https://www.dropbox.com/scl/fi/qy7j0bzpocbbgqphaeopp/_-_-_-_-_.pdf?rlkey=syvxxht6d0hgb12jk4bvgepfb&st=jhs5ql3e&dl=0'
     }
   },
   {
@@ -113,12 +96,12 @@ const books = [
     author: 'Автор',
     price: 500,
     available: true,
-    imageUrl: 'https://drive.google.com/file/d/1NoumRji3fPidQyj9lIwZMLH8wX8kPNRN/view?usp=sharing',
+    imageUrl: 'https://www.dropbox.com/scl/fi/18ylo768tk7huud7ctn3o/_-_-_.png?rlkey=x8xsgkhuftbwq776et4d4ajl4&st=vkfkzg5u&dl=0',
     description: `Существуют ли сейчас ведьмы? 
 
 Каждая женщина — ведьма. Простые практики и медитации, которые меняют внутренний мир.`,
     driveLinks: {
-      pdf: 'https://drive.google.com/file/d/1wTGjTeOQyV_NS76kVjUq9LZ848PBEDjC/view?usp=share_link'
+      pdf: 'https://www.dropbox.com/scl/fi/nen9vpo66hd7955j2z1gm/_-_-_-_.pdf?rlkey=h3xq4cm2j3yx4cudi1giiwj69&st=23kr7qjo&dl=0'
     }
   },
   {
@@ -127,7 +110,7 @@ const books = [
     author: 'Автор',
     price: 500,
     available: false, // Скоро выход
-    imageUrl: 'https://drive.google.com/file/d/1Q4L_-Lt1FZ2AZR8-at2zxa-2AZHZRqYQ/view?usp=sharing',
+    imageUrl: 'https://www.dropbox.com/scl/fi/4hjviyn8czzxogbtul6ze/_-_.png?rlkey=10teqo97m2s0gpl35s08u5ah4&st=n9ih1px0&dl=0',
     description: `Пророчества Дидоны, рождение Ганнибала Барки, великая любовь и судьба Карфагена.
 Скоро в продаже`,
     driveLinks: {}
@@ -148,7 +131,7 @@ bot.onText(/\/start/, (msg) => {
 Переходите в каталог и выбирайте книгу 👇🏻`;
 
   // Ссылка на приветственную картинку
-  const welcomeImageUrl = 'https://drive.google.com/file/d/1fFXVO4d7nWAQfKMFy6YxOBk4HxuQCXFA/view?usp=share_link';
+  const welcomeImageUrl = 'https://www.dropbox.com/scl/fi/id2e56iwj5qzw8zepy343/.jpeg?rlkey=oxy1xhptj63p3sq3soui2hw6l&st=hqx2mvzr&dl=0';
   const welcomeImageLink = getDirectViewLink(welcomeImageUrl);
 
   const keyboard = {
