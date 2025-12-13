@@ -433,6 +433,7 @@ function confirmOrder(adminChatId, userId) {
   const downloadLink = getDirectDownloadLink(driveLink);
   console.log(`🔗 Сформирована ссылка на скачивание: ${downloadLink}`);
   console.log(`📄 Исходная ссылка: ${driveLink}`);
+  console.log(`📋 Проверка ссылки: ${downloadLink.includes('dl=1') ? '✅ Правильно (dl=1 для скачивания)' : '⚠️ Возможно неправильно'}`);
 
   // Ссылка на изображение
   const imageUrl = 'https://www.dropbox.com/scl/fi/p4wdc2ckl5kgy74nz8xt6/_-_.png?rlkey=zj9gqf9t8u8sp5d3xfmfg98qa&st=gvut8sj5&dl=0';
@@ -448,6 +449,9 @@ function confirmOrder(adminChatId, userId) {
 
 🔗 *Ссылка на скачивание:*
 [Скачать книгу](${downloadLink})
+
+_Или скопируйте ссылку напрямую:_
+\`${downloadLink}\`
 
 📥 *Как скачать:*
 1. Нажмите на ссылку выше
@@ -476,8 +480,16 @@ function confirmOrder(adminChatId, userId) {
   bot.sendMessage(userId, notificationText, { parse_mode: 'Markdown' })
     .then(() => {
       console.log(`✅ Уведомление отправлено пользователю ${userId}`);
-      // Уведомление админу о успешной отправке
-      bot.sendMessage(adminChatId, `✅ Заказ подтвержден. Сообщение отправлено пользователю ${userId}.`);
+      console.log(`📎 Ссылка на скачивание в сообщении: ${downloadLink}`);
+      
+      // Уведомление админу о успешной отправке с упоминанием
+      const adminNotification = `✅ *Заказ подтвержден!*\n\n📤 Сообщение отправлено пользователю [ID: ${userId}](tg://user?id=${userId})\n\n📚 Книга: *${order.bookTitle}*\n📄 Формат: ${order.format}\n🔗 Ссылка на файл: ${downloadLink}`;
+      bot.sendMessage(adminChatId, adminNotification, { parse_mode: 'Markdown' })
+        .catch((adminError) => {
+          console.error('⚠️ Ошибка при отправке уведомления админу:', adminError);
+          // Пробуем без форматирования
+          bot.sendMessage(adminChatId, `✅ Заказ подтвержден. Сообщение отправлено пользователю ${userId}. Книга: ${order.bookTitle}, Формат: ${order.format}`);
+        });
       
       // Удаляем заказ из памяти только после успешной отправки
       delete orders[userId];
@@ -512,19 +524,31 @@ function confirmOrder(adminChatId, userId) {
     })
     .catch((error) => {
       console.error('❌ Ошибка при отправке сообщения с Markdown:', error);
+      console.error('Детали ошибки:', JSON.stringify(error, null, 2));
+      console.error(`📤 Попытка отправки пользователю ${userId} (тип: ${typeof userId})`);
+      console.error(`🔗 Ссылка на скачивание: ${downloadLink}`);
+      
       // Пробуем отправить без Markdown форматирования
-      const plainText = notificationText.replace(/\*/g, '').replace(/_/g, '');
+      const plainText = notificationText.replace(/\*/g, '').replace(/_/g, '').replace(/`/g, '');
       bot.sendMessage(userId, plainText)
         .then(() => {
           console.log(`✅ Уведомление отправлено пользователю ${userId} (без Markdown)`);
-          bot.sendMessage(adminChatId, `✅ Заказ подтвержден. Сообщение отправлено пользователю ${userId} (без форматирования).`);
+          const adminMsg = `✅ Заказ подтвержден. Сообщение отправлено пользователю [ID: ${userId}](tg://user?id=${userId}) (без форматирования).\n\n🔗 Ссылка: ${downloadLink}`;
+          bot.sendMessage(adminChatId, adminMsg, { parse_mode: 'Markdown' })
+            .catch(() => {
+              bot.sendMessage(adminChatId, `✅ Заказ подтвержден. Сообщение отправлено пользователю ${userId} (без форматирования).\nСсылка: ${downloadLink}`);
+            });
           delete orders[userId];
         })
         .catch((retryError) => {
-          console.error('❌ Ошибка при повторной отправке сообщения:', retryError);
+          console.error('❌ Критическая ошибка при повторной отправке сообщения:', retryError);
           console.error('Детали ошибки:', JSON.stringify(retryError, null, 2));
-          // Уведомление админу об ошибке
-          bot.sendMessage(adminChatId, `❌ Ошибка при отправке сообщения пользователю ${userId}: ${retryError.message || retryError}`);
+          // Уведомление админу об ошибке с подробностями
+          const errorMsg = `❌ *КРИТИЧЕСКАЯ ОШИБКА*\n\nНе удалось отправить файл пользователю [ID: ${userId}](tg://user?id=${userId})\n\n📚 Книга: *${order.bookTitle}*\n📄 Формат: ${order.format}\n🔗 Ссылка: ${downloadLink}\n\n❌ Ошибка: ${retryError.message || retryError}`;
+          bot.sendMessage(adminChatId, errorMsg, { parse_mode: 'Markdown' })
+            .catch(() => {
+              bot.sendMessage(adminChatId, `❌ Ошибка при отправке сообщения пользователю ${userId}: ${retryError.message || retryError}\nСсылка: ${downloadLink}`);
+            });
           // Не удаляем заказ при ошибке, чтобы можно было попробовать снова
         });
     });
