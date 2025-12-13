@@ -5,11 +5,19 @@
 const TelegramBot = require('node-telegram-bot-api');
 
 // Замените YOUR_BOT_TOKEN на токен от @BotFather
-const token = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN';
+const token = process.env.BOT_TOKEN || '8231548488:AAGmNQYgHqAIlsoQ-dPDT92U05XGW5WIw9c';
 const bot = new TelegramBot(token, { polling: true });
 
 // ID администратора (получите через @userinfobot)
-const ADMIN_ID = process.env.ADMIN_ID || 'YOUR_ADMIN_TELEGRAM_ID';
+const ADMIN_ID = process.env.ADMIN_ID || '292303032';
+
+// Проверка ADMIN_ID при запуске
+if (!ADMIN_ID || ADMIN_ID === 'YOUR_ADMIN_TELEGRAM_ID') {
+  console.error('⚠️ ВНИМАНИЕ: ADMIN_ID не установлен! Администратор не будет получать уведомления.');
+  console.error('📝 Установите переменную окружения ADMIN_ID или измените значение в коде.');
+} else {
+  console.log(`✅ ADMIN_ID установлен: ${ADMIN_ID}`);
+}
 
 // Реквизиты для оплаты (из переменных окружения)
 const CARD_NUMBER = process.env.CARD_NUMBER || '2200 7019 3298 7578';
@@ -378,8 +386,31 @@ bot.on('photo', (msg) => {
 📸 Чек получен ⬇️
   `;
 
-  bot.sendMessage(ADMIN_ID, adminText, { parse_mode: 'Markdown' });
-  bot.sendPhoto(ADMIN_ID, photo.file_id);
+  // Отправка уведомления админу с обработкой ошибок
+  console.log(`📤 Отправка уведомления админу о новом заказе (ADMIN_ID: ${ADMIN_ID})`);
+  
+  bot.sendMessage(ADMIN_ID, adminText, { parse_mode: 'Markdown' })
+    .then(() => {
+      console.log(`✅ Текстовое уведомление отправлено админу`);
+    })
+    .catch((error) => {
+      console.error('❌ Ошибка при отправке текстового уведомления админу:', error);
+      console.error('Детали ошибки:', JSON.stringify(error, null, 2));
+      // Пробуем без форматирования
+      bot.sendMessage(ADMIN_ID, adminText.replace(/\*/g, '').replace(/_/g, ''))
+        .catch((retryError) => {
+          console.error('❌ Критическая ошибка при отправке уведомления админу:', retryError);
+        });
+    });
+
+  bot.sendPhoto(ADMIN_ID, photo.file_id)
+    .then(() => {
+      console.log(`✅ Фото чека отправлено админу`);
+    })
+    .catch((error) => {
+      console.error('❌ Ошибка при отправке фото админу:', error);
+      console.error('Детали ошибки:', JSON.stringify(error, null, 2));
+    });
 
   // Кнопки для админа
   const adminKeyboard = {
@@ -389,7 +420,14 @@ bot.on('photo', (msg) => {
     ]
   };
 
-  bot.sendMessage(ADMIN_ID, 'Выберите действие:', { reply_markup: adminKeyboard });
+  bot.sendMessage(ADMIN_ID, 'Выберите действие:', { reply_markup: adminKeyboard })
+    .then(() => {
+      console.log(`✅ Кнопки действий отправлены админу`);
+    })
+    .catch((error) => {
+      console.error('❌ Ошибка при отправке кнопок админу:', error);
+      console.error('Детали ошибки:', JSON.stringify(error, null, 2));
+    });
 });
 
 // ============================================
@@ -488,9 +526,13 @@ _Или скопируйте ссылку напрямую:_
       console.log(`📎 Ссылка на скачивание в сообщении: ${downloadLink}`);
       
       // Отправляем админу последний оплаченный чек
+      // Используем ADMIN_ID вместо adminChatId для надежности
+      const targetAdminId = ADMIN_ID && ADMIN_ID !== 'YOUR_ADMIN_TELEGRAM_ID' ? ADMIN_ID : adminChatId;
+      console.log(`📤 Отправка уведомлений админу (ID: ${targetAdminId})`);
+      
       if (order.receiptPhotoId) {
         console.log(`📸 Отправка чека админу: ${order.receiptPhotoId}`);
-        bot.sendPhoto(adminChatId, order.receiptPhotoId, {
+        bot.sendPhoto(targetAdminId, order.receiptPhotoId, {
           caption: `📸 *Последний оплаченный чек*\n\n📚 Книга: *${order.bookTitle}*\n📄 Формат: ${order.format}\n💰 Сумма: ${order.price} руб.\n👤 Пользователь: [ID: ${userId}](tg://user?id=${userId})`
         }, { parse_mode: 'Markdown' })
           .then(() => {
@@ -498,8 +540,12 @@ _Или скопируйте ссылку напрямую:_
           })
           .catch((photoError) => {
             console.error('⚠️ Ошибка при отправке чека админу:', photoError);
+            console.error('Детали ошибки:', JSON.stringify(photoError, null, 2));
             // Пробуем без форматирования
-            bot.sendPhoto(adminChatId, order.receiptPhotoId)
+            bot.sendPhoto(targetAdminId, order.receiptPhotoId)
+              .then(() => {
+                console.log(`✅ Чек отправлен админу (без подписи)`);
+              })
               .catch((retryError) => {
                 console.error('⚠️ Критическая ошибка при отправке чека:', retryError);
               });
@@ -510,11 +556,21 @@ _Или скопируйте ссылку напрямую:_
       
       // Уведомление админу о успешной отправке с упоминанием
       const adminNotification = `✅ *Заказ подтвержден!*\n\n📤 Сообщение отправлено пользователю [ID: ${userId}](tg://user?id=${userId})\n\n📚 Книга: *${order.bookTitle}*\n📄 Формат: ${order.format}\n🔗 Ссылка на файл: ${downloadLink}`;
-      bot.sendMessage(adminChatId, adminNotification, { parse_mode: 'Markdown' })
+      bot.sendMessage(targetAdminId, adminNotification, { parse_mode: 'Markdown' })
+        .then(() => {
+          console.log(`✅ Уведомление о подтверждении отправлено админу`);
+        })
         .catch((adminError) => {
           console.error('⚠️ Ошибка при отправке уведомления админу:', adminError);
+          console.error('Детали ошибки:', JSON.stringify(adminError, null, 2));
           // Пробуем без форматирования
-          bot.sendMessage(adminChatId, `✅ Заказ подтвержден. Сообщение отправлено пользователю ${userId}. Книга: ${order.bookTitle}, Формат: ${order.format}`);
+          bot.sendMessage(targetAdminId, `✅ Заказ подтвержден. Сообщение отправлено пользователю ${userId}. Книга: ${order.bookTitle}, Формат: ${order.format}\nСсылка: ${downloadLink}`)
+            .then(() => {
+              console.log(`✅ Уведомление отправлено админу (без форматирования)`);
+            })
+            .catch((retryError) => {
+              console.error('❌ Критическая ошибка при отправке уведомления админу:', retryError);
+            });
         });
       
       // Удаляем заказ из памяти только после успешной отправки
